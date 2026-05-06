@@ -28,8 +28,3 @@ A production-grade infinite scrolling social feed built with Flutter and Supabas
 - **Image Handling**: CachedNetworkImage + 3-Tier Pipeline
 - **Animations**: Hero transitions & Backdrop filters
 
-## 📦 Setup & Build
-Due to a known issue with spaces in Windows paths affecting some native build hooks, use the provided build script if you encounter issues:
-```powershell
-.\build_fix.bat
-```
