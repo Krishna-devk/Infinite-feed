@@ -53,4 +53,8 @@ __pycache__/
 *.png
 *.jpg
 *.jpeg
+devtools_options.yaml
+pubspec_overrides.yaml
+work.py
+build_fix.bat
 *.webp
