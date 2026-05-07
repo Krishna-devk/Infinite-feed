@@ -58,7 +58,7 @@ class PostCard extends ConsumerWidget {
                         AspectRatio(
                           aspectRatio: 16 / 9,
                           child: PostImage(
-                            imageUrl: post.mediaThumbUrl,
+                            imageUrl: post.mediaMobileUrl,
                             heroTag: 'post_image_${index}_${post.id}',
                           ),
                         ),
