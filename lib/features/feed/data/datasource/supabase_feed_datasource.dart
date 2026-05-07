@@ -19,7 +19,16 @@ class SupabaseFeedDatasource implements FeedDatasource {
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 
-    return (response as List).map((json) => PostModel.fromJson(json)).toList();
+    return (response as List).map((json) {
+      // Sanitize DiceBear SVG URLs to PNG
+      if (json['author_avatar_url'] != null &&
+          json['author_avatar_url'].toString().contains('dicebear.com') &&
+          json['author_avatar_url'].toString().contains('/svg')) {
+        json['author_avatar_url'] =
+            json['author_avatar_url'].toString().replaceFirst('/svg', '/png');
+      }
+      return PostModel.fromJson(json);
+    }).toList();
   }
 
   @override

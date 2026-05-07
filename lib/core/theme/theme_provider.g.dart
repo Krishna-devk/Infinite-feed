@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'feed_provider.dart';
+part of 'theme_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,50 +9,50 @@ part of 'feed_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(Feed)
-final feedProvider = FeedProvider._();
+@ProviderFor(AppThemeMode)
+final appThemeModeProvider = AppThemeModeProvider._();
 
-final class FeedProvider extends $NotifierProvider<Feed, FeedState> {
-  FeedProvider._()
+final class AppThemeModeProvider extends $NotifierProvider<AppThemeMode, bool> {
+  AppThemeModeProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'feedProvider',
+        name: r'appThemeModeProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$feedHash();
+  String debugGetCreateSourceHash() => _$appThemeModeHash();
 
   @$internal
   @override
-  Feed create() => Feed();
+  AppThemeMode create() => AppThemeMode();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(FeedState value) {
+  Override overrideWithValue(bool value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<FeedState>(value),
+      providerOverride: $SyncValueProvider<bool>(value),
     );
   }
 }
 
-String _$feedHash() => r'5538d71fa2657f5307a3efd9790c25e5bcce9c12';
+String _$appThemeModeHash() => r'd8b16aeddf20196f1c649d8d39a71da4349a63b5';
 
-abstract class _$Feed extends $Notifier<FeedState> {
-  FeedState build();
+abstract class _$AppThemeMode extends $Notifier<bool> {
+  bool build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<FeedState, FeedState>;
+    final ref = this.ref as $Ref<bool, bool>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<FeedState, FeedState>,
-              FeedState,
+              AnyNotifier<bool, bool>,
+              bool,
               Object?,
               Object?
             >;

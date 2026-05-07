@@ -1,7 +1,10 @@
+import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_intern_work/features/feed/presentation/providers/repository_provider.dart';
 import 'package:flutter_intern_work/features/feed/presentation/providers/post_provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_intern_work/features/feed/data/models/post_model.dart';
 
 part 'feed_provider.g.dart';
 
@@ -39,57 +42,121 @@ class FeedState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [postIds, isLoading, hasMore, errorMessage];
+  List<Object?> get props => [
+        postIds,
+        isLoading,
+        hasMore,
+        errorMessage,
+      ];
 }
 
 @Riverpod(keepAlive: true)
 class Feed extends _$Feed {
-  int _currentOffset = 0;
-  static const int _pageSize = 10;
+  /// Number of posts shown per batch
+  static const int _batchSize = 10;
+
+  /// Stable randomized queue
+  List<String> _feedQueue = [];
+
+  /// Current reading position inside queue
+  int _queueIndex = 0;
 
   @override
-  FeedState build() => const FeedState.initial();
+  FeedState build() {
+    return const FeedState.initial();
+  }
 
   Future<void> fetchNextPage() async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+    );
 
     try {
-      final repository = ref.read(feedRepositoryProvider);
-      final posts = await repository.getPosts(
-        limit: _pageSize,
-        offset: _currentOffset,
-      );
+      /// 1. Initial Load: Load all posts only if queue is empty
+      if (_feedQueue.isEmpty) {
+        final repository = ref.read(feedRepositoryProvider);
+        final posts = await repository.getPosts(
+          limit: 100,
+          offset: 0,
+        );
 
-      if (posts.isEmpty && _currentOffset > 0) {
-        // We reached the absolute end of the DB, loop back to start
-        _currentOffset = 0;
-        state = state.copyWith(isLoading: false);
-        return fetchNextPage();
+        final cacheBox = Hive.box('posts_cache');
+        for (final post in posts) {
+          cacheBox.put(
+            post.id,
+            PostModel.fromEntity(post).toJson(),
+          );
+          ref.read(postProvider(post.id).notifier).setPost(post);
+        }
+
+        _feedQueue = posts.map<String>((e) => e.id).toList();
+        _queueIndex = 0;
+      }
+      /// 2. Reset index after full exhaustion for circularity
+      else if (_queueIndex >= _feedQueue.length) {
+        _queueIndex = 0;
       }
 
-      // Shuffle for randomness
-      final shuffledPosts = List<dynamic>.from(posts)..shuffle();
+      /// 3. Serve sequential batch from circular queue
+      final List<String> nextBatch = [];
+      while (nextBatch.length < _batchSize && _feedQueue.isNotEmpty) {
+        final remainingInQueue = _feedQueue.length - _queueIndex;
+        final toTake = min(_batchSize - nextBatch.length, remainingInQueue);
+        
+        nextBatch.addAll(_feedQueue.skip(_queueIndex).take(toTake));
+        _queueIndex += toTake;
 
-      // Update individual post providers
-      for (final post in shuffledPosts) {
-        ref.read(postProvider(post.id).notifier).setPost(post);
+        if (_queueIndex >= _feedQueue.length) {
+          _queueIndex = 0; // Wrap around
+        }
       }
 
       state = state.copyWith(
-        postIds: [...state.postIds, ...shuffledPosts.map((e) => e.id)],
+        postIds: [...state.postIds, ...nextBatch],
         isLoading: false,
-        hasMore: true, // Always true for infinite looping
+        hasMore: true,
       );
-
-      // Advance offset or loop back
-      if (posts.length < _pageSize) {
-        _currentOffset = 0;
-      } else {
-        _currentOffset += _pageSize;
-      }
     } catch (e) {
+      /// Offline fallback
+      if (state.postIds.isEmpty) {
+        final cacheBox = Hive.box('posts_cache');
+
+        if (cacheBox.isNotEmpty) {
+          final cachedIds = cacheBox.keys
+              .cast<String>()
+              .toList();
+
+          final selectedIds = cachedIds
+              .take(_batchSize)
+              .toList();
+
+          for (final id in selectedIds) {
+            final json = Map<String, dynamic>.from(
+              cacheBox.get(id),
+            );
+
+            final post = PostModel
+                .fromJson(json)
+                .toEntity();
+
+            ref
+                .read(postProvider(id).notifier)
+                .setPost(post);
+          }
+
+          state = state.copyWith(
+            postIds: selectedIds,
+            isLoading: false,
+            hasMore: true,
+          );
+
+          return;
+        }
+      }
+
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
@@ -98,8 +165,16 @@ class Feed extends _$Feed {
   }
 
   Future<void> refresh() async {
-    _currentOffset = 0;
-    state = const FeedState.initial();
+    /// Reset queue completely
+    _feedQueue.clear();
+    _queueIndex = 0;
+
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      postIds: [], // Clear existing posts on refresh
+    );
+
     await fetchNextPage();
   }
 }

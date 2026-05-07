@@ -19,16 +19,7 @@ abstract class PostModel with _$PostModel {
     @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _PostModel;
 
-  factory PostModel.fromJson(Map<String, dynamic> json) {
-    // Sanitize DiceBear SVG URLs to PNG
-    if (json['author_avatar_url'] != null &&
-        json['author_avatar_url'].toString().contains('dicebear.com') &&
-        json['author_avatar_url'].toString().contains('/svg')) {
-      json['author_avatar_url'] =
-          json['author_avatar_url'].toString().replaceFirst('/svg', '/png');
-    }
-    return _$PostModelFromJson(json);
-  }
+  factory PostModel.fromJson(Map<String, dynamic> json) => _$PostModelFromJson(json);
 
   factory PostModel.fromEntity(PostEntity entity) => PostModel(
         id: entity.id,

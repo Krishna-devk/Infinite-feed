@@ -8,11 +8,13 @@ import 'post_image.dart';
 
 class PostCard extends ConsumerWidget {
   final String postId;
+  final int index;
   final VoidCallback onTap;
 
   const PostCard({
     super.key,
     required this.postId,
+    required this.index,
     required this.onTap,
   });
 
@@ -32,46 +34,48 @@ class PostCard extends ConsumerWidget {
             child: _CardShadow(),
           ),
 
-          // 2. Main content with glassmorphism
-          GestureDetector(
-            onTap: onTap,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
+          // 2. Main content with glassmorphism (Isolated for GPU optimization)
+          RepaintBoundary(
+            child: GestureDetector(
+              onTap: onTap,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _PostHeader(post: post),
-                      AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: PostImage(
-                          imageUrl: post.mediaThumbUrl,
-                          heroTag: 'post_image_${post.id}',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _PostHeader(post: post),
+                        AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: PostImage(
+                            imageUrl: post.mediaThumbUrl,
+                            heroTag: 'post_image_${index}_${post.id}',
+                          ),
                         ),
-                      ),
-                      _PostContent(post: post),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: LikeButton(
-                          isLiked: post.isLiked,
-                          likesCount: post.likeCount,
-                          isSyncing: postState.isSyncing,
-                          onTap: () => ref
-                              .read(postProvider(postId).notifier)
-                              .toggleLike(),
+                        _PostContent(post: post),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: LikeButton(
+                            isLiked: post.isLiked,
+                            likesCount: post.likeCount,
+                            isSyncing: postState.isSyncing,
+                            onTap: () => ref
+                                .read(postProvider(postId).notifier)
+                                .toggleLike(),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
